@@ -38,20 +38,35 @@ api.interceptors.request.use(config => {
         config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
+}, error => {
+    return Promise.reject(error);
 });
-
 
 export const loginUser = async (userData) => {
     try {
         const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, userData);
         return response.data;
     } catch (error) {
-        console.error('API Error:', error.response?.data || error.message);
         throw error;
     }
 };
 
 export const getUserProfile = async () => {
-    const response = await api.get('/auth/profile');
-    return response.data;
+    try {
+        const response = await api.get('/api/v1/auth/profile'); // Corrected endpoint
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        throw error;
+    }
+};
+
+export const sendResetPasswordEmail = async (email) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/api/v1/auth/forgot-password`, { email });
+        return response.data;
+    } catch (error) {
+        console.error('API Error:', error.response?.data || error.message);
+        throw error;
+    }
 };

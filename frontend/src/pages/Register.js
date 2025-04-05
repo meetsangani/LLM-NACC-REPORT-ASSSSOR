@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { registerUser } from '../services/api';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import '../assets/styles/Auth.css';
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import eye icons
 
 const Register = () => {
     const [formData, setFormData] = useState({ name: '', email: '', password: '', username: '' });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [showPassword, setShowPassword] = useState(false); // Add showPassword state
     const navigate = useNavigate(); // Initialize useNavigate
 
     const handleChange = (e) => {
@@ -61,14 +63,22 @@ const Register = () => {
                         onChange={handleChange}
                         required
                     />
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        required
-                    />
+                    <div className="password-field">
+                        <input
+                            type={showPassword ? "text" : "password"} // Add showPassword toggle
+                            name="password"
+                            placeholder="Password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            required
+                        />
+                        <span
+                            className="toggle-password"
+                            onClick={() => setShowPassword(!showPassword)} // Add eye icon to toggle password visibility
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
+                    </div>
                     <input
                         type="text"
                         name="username"

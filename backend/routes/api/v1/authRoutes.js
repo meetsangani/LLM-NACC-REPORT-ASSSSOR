@@ -1,15 +1,17 @@
 const express = require('express');
-const { register, login, getProfile, logout, verifyOTP } = require('../../../controllers/auth/authController');
+const authController = require('../../../controllers/auth/authController');
 const { authMiddleware } = require('../../../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.post('/register', register); // Registration route
-router.post('/verify-otp', verifyOTP); // OTP verification route (no authMiddleware here)
-router.post('/login', login); // Login route
+router.post('/register', authController.register); // Registration route
+router.post('/verify-otp', authController.verifyOTP); // OTP verification route (no authMiddleware here)
+router.post('/login', authController.login); // Login route
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
 // Protected routes
-router.get('/profile', authMiddleware, getProfile);
-router.post('/logout', authMiddleware, logout);
+router.get('/profile', authMiddleware, authController.getProfile); // Ensure this route is defined and protected
+router.post('/logout', authMiddleware, authController.logout);
 
 module.exports = router;

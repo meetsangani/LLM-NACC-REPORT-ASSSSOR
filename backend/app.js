@@ -28,7 +28,7 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth', authRoutes); // Ensure this line is present
 app.use('/api/v1/students', studentRoutes);
 app.use('/api/v1/teachers', teacherRoutes);
 app.use('/api/v1/placements', placementRoutes);

@@ -82,3 +82,57 @@
     border-radius: 6px;
     margin-bottom: 10px;
 }
+
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    width: 100%;
+    padding-right: 40px;
+}
+
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+    font-size: 18px;
+}
+
+.toggle-password:hover {
+    color: #007bff;
+}
+
+/* Add CAPTCHA styles */
+.captcha-container {
+    margin-bottom: 15px;
+}
+
+.captcha-challenge {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 18px;
+    letter-spacing: 1px;
+}
+
+.refresh-captcha {
+    background: none;
+    border: none;
+    color: #007bff;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+.refresh-captcha:hover {
+    color: #0056b3;
+}

@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer'); // Import nodemailer
 const crypto = require('crypto'); // Import crypto
+const axios = require('axios'); // Import axios
+const { createAssessment } = require('../../services/recaptchaService'); // Import createAssessment
 
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
@@ -130,6 +132,14 @@ const login = async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
+        // Check if user is verified
+        if (!user.isVerified) {
+            return res.status(401).json({ 
+                message: 'Please verify your email address before logging in',
+                userId: user._id 
+            });
+        }
+
         // Generate a JWT token
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
@@ -145,15 +155,19 @@ const login = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: "Error during login", error: error.message });
     }
 };
 
 // Get user profile
 const getProfile = async (req, res) => {
     try {
-        res.status(200).json(req.user);
+        res.status(200).json({
+            id: req.user._id,
+            name: req.user.name,
+            email: req.user.email,
+            username: req.user.username,
+        });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
@@ -164,4 +178,57 @@ const logout = (req, res) => {
     res.status(200).json({ message: 'Logout successful' });
 };
 
-module.exports = { register, login, getProfile, logout, verifyOTP };
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const token = crypto.randomBytes(20).toString('hex');
+        user.resetPasswordToken = token;
+        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+        await user.save();
+
+        const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Password Reset Request',
+            html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. This link will expire in 1 hour.</p>`,
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.status(200).json({ message: 'Password reset email sent successfully.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error sending password reset email.', error: error.message });
+    }
+};
+
+const resetPassword = async (req, res) => {
+    const { token, newPassword } = req.body;
+
+    try {
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() },
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired token' });
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+
+        res.status(200).json({ message: 'Password reset successfully.' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error resetting password.', error: error.message });
+    }
+};
+
+module.exports = { register, login, getProfile, logout, verifyOTP, forgotPassword, resetPassword };

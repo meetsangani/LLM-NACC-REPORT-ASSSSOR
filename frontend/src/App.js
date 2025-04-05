@@ -9,6 +9,7 @@ import Home from './pages/HomePage';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import VerifyOTP from './pages/VerifyOTP'; // Import VerifyOTP
+import ForgotPassword from './pages/ForgotPassword'; // Import ForgotPassword
 import Dashboard from './pages/Dashboard';
 import Criterion1 from './pages/Criterion1';
 import Criterion2 from './pages/Criterion2';
@@ -23,6 +24,7 @@ import UploadReports from './pages/UploadReports';
 import AIAnalysis from './pages/AIAnalysis';
 import Improvement from './pages/Improvement';
 import ProgressTracking from './pages/ProgressTracking';
+import Profile from './pages/profile';
 
 // AppContent component to handle routes and authentication
 function AppContent({ isAuthenticated, setIsAuthenticated }) {
@@ -38,6 +40,7 @@ function AppContent({ isAuthenticated, setIsAuthenticated }) {
                     <Route path="/login" element={<Login setAuth={setIsAuthenticated} />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/verify-otp/:userId" element={<VerifyOTP />} /> {/* Add this line */}
+                    <Route path="/forgot-password" element={<ForgotPassword />} /> {/* Add ForgotPassword route */}
 
                     {/* Private Routes */}
                     {isAuthenticated ? (
@@ -57,6 +60,7 @@ function AppContent({ isAuthenticated, setIsAuthenticated }) {
                             <Route path="/ai-analysis" element={<AIAnalysis />} />
                             <Route path="/improvement" element={<Improvement />} />
                             <Route path="/progress-tracking" element={<ProgressTracking />} />
+                            <Route path="/profile" element={<Profile />} />
                         </>
                     ) : (
                         <Route path="*" element={<Navigate to="/login" state={{ from: location }} />} />
