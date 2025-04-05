@@ -42,9 +42,25 @@ api.interceptors.request.use(config => {
     return Promise.reject(error);
 });
 
+// Add response interceptor to handle 401 errors
+api.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response?.status === 401) {
+            // Clear token and redirect to login
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const loginUser = async (userData) => {
     try {
         const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, userData);
+        if (response.data.message === 'Please verify your email address before logging in') {
+            return { unverified: true, userId: response.data.userId };
+        }
         return response.data;
     } catch (error) {
         throw error;
@@ -53,7 +69,13 @@ export const loginUser = async (userData) => {
 
 export const getUserProfile = async () => {
     try {
-        const response = await api.get('/api/v1/auth/profile'); // Corrected endpoint
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+        
+        const response = await api.get('/api/v1/auth/profile');
         return response.data;
     } catch (error) {
         console.error('Error fetching user profile:', error);

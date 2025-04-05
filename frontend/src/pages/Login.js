@@ -50,8 +50,11 @@ const Login = ({ setAuth }) => {
         }
 
         try {
-            // No need to include reCAPTCHA token
             const response = await loginUser(formData);
+            if (response.unverified) {
+                navigate(`/verify-otp/${response.userId}`);
+                return;
+            }
             setSuccess(response.message || 'Login successful!');
             localStorage.setItem('token', response.token); // Save the token
             setAuth(true);

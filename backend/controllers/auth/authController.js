@@ -3,8 +3,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer'); // Import nodemailer
 const crypto = require('crypto'); // Import crypto
-const axios = require('axios'); // Import axios
-const { createAssessment } = require('../../services/recaptchaService'); // Import createAssessment
 
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
@@ -109,7 +107,8 @@ const verifyOTP = async (req, res) => {
         user.otpExpiry = null;
         await user.save();
 
-        res.status(200).json({ message: 'OTP verified successfully. You can now login.' });
+        // Don't generate token here - user should log in after verification
+        res.status(200).json({ message: 'Email verified successfully. You can now login.' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error', error: error.message });
