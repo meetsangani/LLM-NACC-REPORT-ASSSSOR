@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-// Fix import to destructure the authMiddleware function
-const { authMiddleware } = require('../../../middleware/authMiddleware');
+const authMiddleware = require('../../../middleware/authMiddleware'); // Fix import
 const studentController = require('../../../controllers/student/studentController');
 
 // Route to get all students

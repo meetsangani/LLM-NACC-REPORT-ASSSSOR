@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const placementController = require('../../../controllers/placement/placementController');
-// Fix import to destructure the authMiddleware function
-const { authMiddleware } = require('../../../middleware/authMiddleware');
+// Fix: Import authMiddleware directly instead of trying to destructure it
+const authMiddleware = require('../../../middleware/authMiddleware');
 
 // Define routes for placement-related operations
 router.post('/', authMiddleware, placementController.createPlacement);

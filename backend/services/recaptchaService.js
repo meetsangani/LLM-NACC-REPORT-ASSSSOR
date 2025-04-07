@@ -32,7 +32,7 @@ async function createAssessment({
   const [response] = await client.createAssessment(request);
 
   if (!response.tokenProperties.valid) {
-    console.log(`The CreateAssessment call failed because the token was: ${response.tokenProperties.invalidReason}`);
+    console.error(`Invalid token: ${response.tokenProperties.invalidReason}`);
     return null;
   }
 

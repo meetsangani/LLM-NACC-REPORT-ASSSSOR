@@ -14,6 +14,8 @@ const infrastructureRoutes = require('./routes/api/v1/infrastructureRoutes');
 const governanceRoutes = require('./routes/api/v1/governanceRoutes');
 const developerAdminRoutes = require('./routes/api/v1/developerAdminRoutes');
 const courseRoutes = require('./routes/api/v1/courseRoutes');
+const pdfRoutes = require('./routes/api/v1/pdfRoutes'); // Add missing route
+const manualEntryRoutes = require('./routes/api/v1/manualEntryRoutes'); // Add missing route
 
 const app = express();
 
@@ -37,6 +39,8 @@ app.use('/api/v1/infrastructure', infrastructureRoutes);
 app.use('/api/v1/governance', governanceRoutes);
 app.use('/api/v1/developer-admin', developerAdminRoutes);
 app.use('/api/v1/courses', courseRoutes);
+app.use('/api/v1/pdf', pdfRoutes); // Add missing route usage
+app.use('/api/v1/manual-entry', manualEntryRoutes); // Add missing route usage
 
 app.use(errorMiddleware);
 

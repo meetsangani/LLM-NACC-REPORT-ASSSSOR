@@ -1,11 +1,11 @@
 const express = require('express');
 const authController = require('../../../controllers/auth/authController');
-const { authMiddleware } = require('../../../middleware/authMiddleware');
+const authMiddleware = require('../../../middleware/authMiddleware'); // Fix import
 
 const router = express.Router();
 
 router.post('/register', authController.register); // Registration route
-router.post('/verify-otp', authController.verifyOTP); // OTP verification route (no authMiddleware here)
+router.post('/verify-otp', authController.verifyOTP); // OTP verification route
 router.post('/login', authController.login); // Login route
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
