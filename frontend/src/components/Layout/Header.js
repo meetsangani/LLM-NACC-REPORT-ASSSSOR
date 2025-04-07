@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Homepage from '../../pages/HomePage';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -8,7 +9,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { getUserProfile } from '../../services/api'; // Corrected import
 
-const Header = () => {
+const Header = ({ setIsAuthenticated }) => {
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState(null);
     const [userEmail, setUserEmail] = useState('');
@@ -44,6 +45,7 @@ const Header = () => {
 
     const handleLogout = () => {
         localStorage.removeItem('token'); // Clear the authentication token
+        setIsAuthenticated(false); // Update authentication state
         navigate('/login'); // Redirect to the login page
     };
 
@@ -58,7 +60,7 @@ const Header = () => {
                 <Typography variant="h6" style={{ flexGrow: 1 }}>
                     LLM NAAC Report Assessor
                 </Typography>
-                <Button color="inherit" component={Link} to="/">Home</Button>
+                <Button color="inherit" component={Link} to="/home">Home</Button>
                 <Button color="inherit" component={Link} to="/llm-analysis">LLM Analysis</Button>
                 {userEmail && (
                     <>

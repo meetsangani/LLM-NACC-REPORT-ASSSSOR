@@ -2,36 +2,81 @@ import React, { useState } from 'react';
 import { Container, Typography, Paper, Box, Button, Alert, LinearProgress } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import axios from 'axios'; // Import axios for API calls
 
 function UploadReports() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState(null);
 
   const handleFileSelect = (event) => {
-    if (event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
+    const file = event.target.files[0];
+    
+    if (file) {
+      // Validate file type
+      if (file.type !== 'application/pdf') {
+        setUploadStatus({ 
+          type: 'error', 
+          message: 'Please select a PDF file only.' 
+        });
+        return;
+      }
+      
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        setUploadStatus({ 
+          type: 'error', 
+          message: 'File size exceeds 10MB limit. Please select a smaller file.' 
+        });
+        return;
+      }
+      
+      setSelectedFile(file);
       setUploadStatus(null);
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) {
       setUploadStatus({ type: 'error', message: 'Please select a file first.' });
       return;
     }
 
     setUploading(true);
+    setUploadProgress(0);
     
-    // Simulate upload process
-    setTimeout(() => {
+    // Create form data for file upload
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('fileName', selectedFile.name);
+    
+    try {
+      // Make API call to upload the file
+      const response = await axios.post('/api/v1/reports/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
+        }
+      });
+      
       setUploading(false);
       setUploadStatus({ 
         type: 'success', 
-        message: 'Report uploaded successfully! Your analysis will begin shortly.' 
+        message: 'Report uploaded successfully! Your analysis will begin shortly.',
+        reportId: response.data.id // Store the report ID for later use
       });
       setSelectedFile(null);
-    }, 2000);
+    } catch (error) {
+      setUploading(false);
+      setUploadStatus({ 
+        type: 'error', 
+        message: error.response?.data?.message || 'Error uploading file. Please try again.'
+      });
+    }
   };
 
   return (
@@ -82,12 +127,15 @@ function UploadReports() {
           </label>
           
           <Typography variant="body2" sx={{ mt: 1 }}>
-            {selectedFile ? `Selected: ${selectedFile.name}` : 'No file selected'}
+            {selectedFile ? `Selected: ${selectedFile.name} (${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)` : 'No file selected'}
           </Typography>
           
           {uploading && (
             <Box sx={{ width: '100%', mt: 2 }}>
-              <LinearProgress />
+              <LinearProgress variant="determinate" value={uploadProgress} />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Uploading: {uploadProgress}%
+              </Typography>
             </Box>
           )}
           

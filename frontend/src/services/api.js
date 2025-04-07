@@ -92,3 +92,32 @@ export const sendResetPasswordEmail = async (email) => {
         throw error;
     }
 };
+
+export const resetPassword = async (token, newPassword) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/api/v1/auth/reset-password`, { token, newPassword });
+        return response.data;
+    } catch (error) {
+        console.error('API Error:', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+export const uploadReport = async (formData) => {
+    try {
+        const response = await api.post(`/api/v1/reports/upload`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
+            onUploadProgress: (progressEvent) => {
+                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                // You can use this for a progress indicator if needed
+                console.log(`Upload Progress: ${percentCompleted}%`);
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('API Error:', error.response?.data || error.message);
+        throw error;
+    }
+};

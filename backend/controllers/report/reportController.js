@@ -1,4 +1,6 @@
 const Report = require('../../models/report/Report');
+const fs = require('fs');
+const path = require('path');
 
 // Create a new report
 exports.createReport = async (req, res) => {
@@ -8,6 +10,51 @@ exports.createReport = async (req, res) => {
         res.status(201).json(report);
     } catch (error) {
         res.status(400).json({ message: error.message });
+    }
+};
+
+// Upload a report file (PDF)
+exports.uploadReportFile = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        // Create a new report entry in the database
+        const report = new Report({
+            title: req.body.fileName || req.file.originalname,
+            description: req.body.description || 'Uploaded NAAC report',
+            author: req.body.author || req.user?._id || '64f5a7e5e85648a4c8b114a8', // Default or logged in user
+            data: {
+                filePath: req.file.path,
+                fileSize: req.file.size,
+                fileType: req.file.mimetype,
+                originalName: req.file.originalname
+            }
+        });
+
+        await report.save();
+
+        // Schedule the analysis process (this would be implemented separately)
+        // analysisQueue.add({ reportId: report._id });
+
+        res.status(201).json({
+            message: 'Report uploaded successfully',
+            id: report._id,
+            fileName: req.file.originalname,
+            fileSize: req.file.size
+        });
+    } catch (error) {
+        // If there's an error, clean up the uploaded file
+        if (req.file && req.file.path) {
+            try {
+                fs.unlinkSync(req.file.path);
+            } catch (err) {
+                console.error('Error deleting file:', err);
+            }
+        }
+        
+        res.status(500).json({ message: error.message });
     }
 };
 

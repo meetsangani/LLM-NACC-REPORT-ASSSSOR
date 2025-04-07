@@ -59,9 +59,9 @@ const Login = ({ setAuth }) => {
             localStorage.setItem('token', response.token); // Save the token
             setAuth(true);
 
-            const redirectPath = location.state?.from || '/';
+            // Change redirection to homepage instead of previous page or root
             setTimeout(() => {
-                navigate(redirectPath);
+                navigate('/home');  // Redirect to homepage after login
             }, 2000);
         } catch (error) {
             setError(
