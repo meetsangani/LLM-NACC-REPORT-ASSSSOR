@@ -4,18 +4,27 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer'); // Import nodemailer
 const crypto = require('crypto'); // Import crypto
 
-// Nodemailer transporter setup
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com", // Gmail SMTP server
-    port: 587, // TLS port
-    secure: false, // Use TLS (secure: false for port 587)
-    auth: {
-        user: process.env.EMAIL_USER, // Your Gmail address
-        pass: process.env.EMAIL_PASS, // Your Gmail App Password
-    },
-    debug: true, // Enable debugging
-    logger: true, // Enable logging
-});
+// Nodemailer transporter setup with better configuration
+const createTransporter = () => {
+    // Check if email credentials are properly configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.warn('Email credentials not configured. Email features will be disabled.');
+        return null;
+    }
+
+    return nodemailer.createTransport({
+        service: 'gmail', // Use service instead of manual host/port
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS, // This should be an App Password, not regular password
+        },
+        tls: {
+            rejectUnauthorized: false // Allow self-signed certificates
+        }
+    });
+};
+
+const transporter = createTransporter();
 
 const register = async (req, res) => {
     const { name, email, password, username } = req.body;
@@ -40,7 +49,7 @@ const register = async (req, res) => {
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create a new user (but don't save yet)
+        // Create a new user
         const newUser = new User({
             name,
             email,
@@ -48,37 +57,73 @@ const register = async (req, res) => {
             username,
             otp,
             otpExpiry,
-            isVerified: false, // User is not verified initially
+            isVerified: false,
         });
 
-        // Send OTP via email
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Verify Your Email',
-            html: `<p>Your OTP for email verification is: <b>${otp}</b>. It will expire in 1 hour.</p>`,
-        };
+        // Save user first
+        await newUser.save();
 
-        try {
-            const info = await transporter.sendMail(mailOptions);
-            console.log('Email sent successfully:', info.response);
+        // Try to send OTP via email if transporter is available
+        if (transporter) {
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'Verify Your Email - LLM NAAC Report Assessor',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2>Email Verification</h2>
+                        <p>Hello ${name},</p>
+                        <p>Thank you for registering with LLM NAAC Report Assessor. Please use the following OTP to verify your email address:</p>
+                        <div style="background-color: #f0f0f0; padding: 20px; text-align: center; margin: 20px 0;">
+                            <h1 style="color: #007bff; margin: 0;">${otp}</h1>
+                        </div>
+                        <p>This OTP will expire in 1 hour.</p>
+                        <p>If you didn't create this account, please ignore this email.</p>
+                    </div>
+                `,
+            };
 
-            // Save the user with OTP details
-            await newUser.save();
+            try {
+                await transporter.sendMail(mailOptions);
+                console.log('OTP email sent successfully to:', email);
+                
+                res.status(201).json({
+                    message: 'User registered successfully. Please check your email for OTP verification.',
+                    userId: newUser._id,
+                    otpSent: true,
+                });
+            } catch (sendError) {
+                console.error('Error sending email:', sendError);
+                
+                // Delete the user if email sending fails to prevent orphaned accounts
+                await User.findByIdAndDelete(newUser._id);
+                
+                // Check for specific Gmail auth errors
+                if (sendError.message.includes('Invalid login') || sendError.code === 'EAUTH') {
+                    return res.status(500).json({
+                        message: 'Email service configuration error. Please contact administrator.',
+                        error: 'Email authentication failed'
+                    });
+                }
+                
+                return res.status(500).json({
+                    message: 'Registration failed due to email service error. Please try again.',
+                    error: 'Email service temporarily unavailable'
+                });
+            }
+        } else {
+            // No email service configured - for development/testing
+            console.warn('Email service not configured. User registered with OTP:', otp);
             res.status(201).json({
-                message: 'User registered successfully. Please check your email for OTP verification.',
+                message: 'User registered successfully. Email service not configured.',
                 userId: newUser._id,
-                otpSent: true,
-            });
-        } catch (sendError) {
-            console.error('Error sending email:', sendError);
-            return res.status(500).json({
-                message: 'Error sending OTP email. Please check your email configuration and network connectivity.',
-                error: sendError.message,
+                otpSent: false,
+                // Only show OTP in development mode
+                developmentOtp: process.env.NODE_ENV === 'development' ? otp : undefined
             });
         }
     } catch (error) {
-        console.error(error);
+        console.error('Registration error:', error);
         res.status(500).json({ message: 'Registration failed. Please try again.', error: error.message });
     }
 };
@@ -191,18 +236,47 @@ const forgotPassword = async (req, res) => {
         user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
         await user.save();
 
-        const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Password Reset Request',
-            html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. This link will expire in 1 hour.</p>`,
-        };
+        if (transporter) {
+            const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${token}`;
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'Password Reset Request - LLM NAAC Report Assessor',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2>Password Reset Request</h2>
+                        <p>Hello,</p>
+                        <p>You requested a password reset for your LLM NAAC Report Assessor account.</p>
+                        <p>Click the button below to reset your password:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
+                        </div>
+                        <p>Or copy and paste this link into your browser:</p>
+                        <p><a href="${resetUrl}">${resetUrl}</a></p>
+                        <p>This link will expire in 1 hour.</p>
+                        <p>If you didn't request this password reset, please ignore this email.</p>
+                    </div>
+                `,
+            };
 
-        await transporter.sendMail(mailOptions);
-        res.status(200).json({ message: 'Password reset email sent successfully.' });
+            try {
+                await transporter.sendMail(mailOptions);
+                res.status(200).json({ message: 'Password reset email sent successfully.' });
+            } catch (sendError) {
+                console.error('Error sending password reset email:', sendError);
+                res.status(500).json({ 
+                    message: 'Password reset token generated, but email could not be sent. Please contact administrator.',
+                    emailError: 'Email service temporarily unavailable'
+                });
+            }
+        } else {
+            res.status(500).json({ 
+                message: 'Email service not configured. Please contact administrator for password reset.',
+                resetToken: process.env.NODE_ENV === 'development' ? token : undefined
+            });
+        }
     } catch (error) {
-        res.status(500).json({ message: 'Error sending password reset email.', error: error.message });
+        res.status(500).json({ message: 'Error processing password reset request.', error: error.message });
     }
 };
 

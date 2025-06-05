@@ -22,20 +22,31 @@ const Register = () => {
 
         try {
             const response = await registerUser(formData);
+            
             if (response.otpSent) {
                 setSuccess(response.message || 'Registration successful! Please verify your OTP.');
                 setFormData({ name: '', email: '', password: '', username: '' });
-
                 // Redirect to OTP verification page after successful registration
                 navigate(`/verify-otp/${response.userId}`);
+            } else if (response.developmentOtp) {
+                // Development mode - show OTP directly
+                setSuccess(`Registration successful! Development OTP: ${response.developmentOtp}. Please verify your account.`);
+                navigate(`/verify-otp/${response.userId}`);
             } else {
-                setError("Failed to send OTP. Please check your email configuration or try again later.");
+                // Email service not configured or failed
+                setError(response.message || "Registration completed but email service is not available. Please contact administrator for OTP.");
             }
         } catch (error) {
-            setError(
-                (error.response && error.response.data && error.response.data.message) ||
-                'Registration failed. Please try again.'
-            );
+            console.error('Registration error:', error);
+            
+            // Handle different types of errors
+            if (error.message.includes('Email service configuration error')) {
+                setError('Registration failed: Email service is not properly configured. Please contact administrator.');
+            } else if (error.message.includes('Email service temporarily unavailable')) {
+                setError('Registration failed: Email service is temporarily unavailable. Please try again later.');
+            } else {
+                setError(error.message || 'Registration failed. Please try again.');
+            }
         }
     };
 

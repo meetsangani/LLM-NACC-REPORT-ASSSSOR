@@ -8,8 +8,20 @@ export const registerUser = async (userData) => {
         const response = await axios.post(`${API_BASE_URL}/api/v1/auth/register`, userData);
         return response.data;
     } catch (error) {
-        console.error('API Error:', error.response?.data || error.message);
-        throw error;
+        console.error('Registration API Error:', error.response?.data || error.message);
+        
+        // Handle different error scenarios
+        if (error.response) {
+            // Server responded with error status
+            const { status, data } = error.response;
+            throw new Error(data?.message || `Server error: ${status}`);
+        } else if (error.request) {
+            // Request was made but no response received
+            throw new Error('Network error: Unable to reach server');
+        } else {
+            // Something else happened
+            throw new Error(error.message || 'Unknown error occurred');
+        }
     }
 };
 
@@ -18,8 +30,16 @@ export const verifyOTP = async (userId, otp) => {
         const response = await axios.post(`${API_BASE_URL}/api/v1/auth/verify-otp`, { userId, otp });
         return response.data;
     } catch (error) {
-        console.error('API Error:', error.response?.data || error.message);
-        throw error;
+        console.error('OTP Verification API Error:', error.response?.data || error.message);
+        
+        if (error.response) {
+            const { status, data } = error.response;
+            throw new Error(data?.message || `Server error: ${status}`);
+        } else if (error.request) {
+            throw new Error('Network error: Unable to reach server');
+        } else {
+            throw new Error(error.message || 'Unknown error occurred');
+        }
     }
 };
 
@@ -63,7 +83,16 @@ export const loginUser = async (userData) => {
         }
         return response.data;
     } catch (error) {
-        throw error;
+        console.error('Login API Error:', error.response?.data || error.message);
+        
+        if (error.response) {
+            const { status, data } = error.response;
+            throw new Error(data?.message || `Server error: ${status}`);
+        } else if (error.request) {
+            throw new Error('Network error: Unable to reach server');
+        } else {
+            throw new Error(error.message || 'Unknown error occurred');
+        }
     }
 };
 
@@ -88,8 +117,16 @@ export const sendResetPasswordEmail = async (email) => {
         const response = await axios.post(`${API_BASE_URL}/api/v1/auth/forgot-password`, { email });
         return response.data;
     } catch (error) {
-        console.error('API Error:', error.response?.data || error.message);
-        throw error;
+        console.error('Reset Password Email API Error:', error.response?.data || error.message);
+        
+        if (error.response) {
+            const { status, data } = error.response;
+            throw new Error(data?.message || `Server error: ${status}`);
+        } else if (error.request) {
+            throw new Error('Network error: Unable to reach server');
+        } else {
+            throw new Error(error.message || 'Unknown error occurred');
+        }
     }
 };
 
@@ -98,8 +135,16 @@ export const resetPassword = async (token, newPassword) => {
         const response = await axios.post(`${API_BASE_URL}/api/v1/auth/reset-password`, { token, newPassword });
         return response.data;
     } catch (error) {
-        console.error('API Error:', error.response?.data || error.message);
-        throw error;
+        console.error('Reset Password API Error:', error.response?.data || error.message);
+        
+        if (error.response) {
+            const { status, data } = error.response;
+            throw new Error(data?.message || `Server error: ${status}`);
+        } else if (error.request) {
+            throw new Error('Network error: Unable to reach server');
+        } else {
+            throw new Error(error.message || 'Unknown error occurred');
+        }
     }
 };
 
@@ -111,13 +156,20 @@ export const uploadReport = async (formData) => {
             },
             onUploadProgress: (progressEvent) => {
                 const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                // You can use this for a progress indicator if needed
                 console.log(`Upload Progress: ${percentCompleted}%`);
             }
         });
         return response.data;
     } catch (error) {
-        console.error('API Error:', error.response?.data || error.message);
-        throw error;
+        console.error('Upload Report API Error:', error.response?.data || error.message);
+        
+        if (error.response) {
+            const { status, data } = error.response;
+            throw new Error(data?.message || `Server error: ${status}`);
+        } else if (error.request) {
+            throw new Error('Network error: Unable to reach server');
+        } else {
+            throw new Error(error.message || 'Unknown error occurred');
+        }
     }
 };
